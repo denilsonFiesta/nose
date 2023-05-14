@@ -10,6 +10,7 @@ typedef struct Heap{
   struct Node* array;
   int count; 
   int capacity;
+  int heap_type;
 }Heap;
 
 struct Node CreateNode( int key,  void * value) {
@@ -19,11 +20,12 @@ struct Node CreateNode( int key,  void * value) {
     return nodito;
 }
 
-struct Heap* CreateHeap( ){
+struct Heap* CreateHeap(int capacity, int heap_type){
 
   struct Heap* heap = (struct Heap*) calloc(1, sizeof(struct Heap) );
+  heap->heap_type = heap_type;
   heap->count = 0;
-  heap->capacity = 3;
+  heap->capacity = capacity;
   heap->array = (struct Node*) calloc(heap->capacity, sizeof( struct Node));
 
   return heap;

@@ -20,8 +20,6 @@ struct Node CreateNode( int key,  void * value);
 
 int Empty(struct Heap* h);
 
-struct Heap* CreateHeap(int capacity);
-
 void ResizeHeap(struct Heap* h);
 
 int LeftChild(struct Heap *h, int i);

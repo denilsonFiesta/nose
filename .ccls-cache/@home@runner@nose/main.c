@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include "list.h"
-#include "heap.h"
+#include "heaplab.h"
 
 typedef struct {
   int prioridad;
@@ -33,7 +33,7 @@ Tarea* obtenerTarea(){
   scanf("%s", new->nombre);
   printf("Prioridad : ");
   scanf("%d", new->prioridad);
-  new->heapPrecedentes =CreateHeap();
+  new->heapPrecedentes = CreateHeap();
   return new;
   
 }
@@ -42,12 +42,15 @@ Tarea* obtenerTarea(){
 
 void agregarTarea (Heap* heapTareas){
   Tarea* nuevaTarea = obtenerTarea();
-  
+  heap_push(heapTareas,nuevaTarea->nombre,nuevaTarea->prioridad);
+  printf("Tarea ingresada correctamente");
 }
 
 //opcion 2
 
-void establecerPrecedencia(Heap* heapTareas, )
+void establecerPrecedencia(Heap* heapTareas, ){
+  
+}
 
 
 
