@@ -23,6 +23,11 @@ typedef struct {
   int visited;
 }TareaE;
 
+typedef struct{
+  char* tareaA;
+  char* tareaB;
+}Conexion;
+
 
 void mostrarMenu(){
   printf("\n      Organizacion de Tareas     \n");
@@ -267,6 +272,10 @@ void importarDatos(Map* mapTareas, HashMap* hashTareas){
   char getLine[1024];
   char nombreArchivo[50];
 
+  Conexion* cn;
+
+  List *listaConexiones = createList();
+  
   printf("Ingrese el nombre del archivo a importar: ");
   scanf("%s", nombreArchivo);
   archivo = fopen(nombreArchivo, "r");
@@ -284,7 +293,7 @@ void importarDatos(Map* mapTareas, HashMap* hashTareas){
     int contCampos = 0;
 
     Tarea* tareaAdd = (Tarea*) calloc(1, sizeof(Tarea));
-
+    
     tareaAdd->mapPrecedentes = createMap();
 
     token = strtok(getLine, ",");
@@ -300,6 +309,10 @@ void importarDatos(Map* mapTareas, HashMap* hashTareas){
           tareaAdd->prioridad = atoi(cualEs);
           break;
         default:
+          cn = (Conexion*) calloc(1, sizeof(Conexion));
+          cn->tareaB = tareaAdd->nombre;
+          strcpy(cn->tareaA, cualEs);
+          pushBack(listaConexiones, cn);
           break;
       }
       contCampos++;
@@ -318,6 +331,16 @@ void importarDatos(Map* mapTareas, HashMap* hashTareas){
   
 
   //aqui mando la lista de coso a -> b
+  /*
+  Conexion* it = firstList(listaConexiones);
+  
+  while(it != NULL){
+    printf("%s - %s \n", it->tareaA, it->tareaB);
+    it = nextList(listaConexiones);
+  }*/
+
+
+  
   //aun en construcciones
   
   printf("Archivo importado correctamente\n");
@@ -354,6 +377,7 @@ int main(void) {
         break;
       case 6:
         importarDatos(mapTareas, hashTareas);
+        break;
       case 7:
         printf("----Fin del Programa----\n");
         break;
