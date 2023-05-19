@@ -31,8 +31,8 @@ void mostrarMenu(){
   printf("[3] Mostrar Tareas por hacer \n");
   printf("[4] Marcar tarea completada \n");
   printf("[5] Deshacer ultima accion \n");
-  printf("[6] Exportar Datos \n");
-  printf("[7] Cargar las tareas del archivo \n");
+  printf("[6] Importar Datos \n");
+  printf("[7] Salir \n");
   printf("Seleccione una opción: ");
 }
 
@@ -181,6 +181,8 @@ void mostrarTareas(Map* mapTareas, HashMap* hashTareas){
 
 void imprimirTareas(Map* mapTareas){
   Pair* it = rFirst(mapTareas);
+  int cont = 0 ;
+  
   while(it!=NULL){
     Tarea* tarea = getTarea(it);
 
@@ -192,13 +194,138 @@ void imprimirTareas(Map* mapTareas){
       printf("  %s\n",tareaP->nombre);
       it2 = rNext(tarea->mapPrecedentes);
     }
-    
+    cont++;
     it = rNext(mapTareas);
   }
+  printf("Se encontraron %d tarea[s]. \n", cont);
+}
+
+//opcion 4
+
+void marcarCompletada(Map* mapTareas, HashMap* hashTareas){
+  char nombTarea[50];
+  printf("Ingrese la tarea a eliminar ");
+  scanf("%s", nombTarea);
+  
+  Par* parTarea = searchMap(hashTareas, nombTarea);
+  
+  if (parTarea != NULL){
+    
+    Tarea* tareaEnc = getTareaE(parTarea);
+    
+    if (tareaEnc->mapPrecedentes){
+      
+      Pair* it2 = rFirst(tareaEnc->mapPrecedentes);
+      TareaE* tareaPrec = getTareaE(it2);
+      printf("Está seguro que desea eliminar la tarea? ");
+      char resp[3];
+      scanf("s/n : %c",resp);
+      
+      if (resp == "s" || resp == "S"){
+        
+        tareaPrec->visited == 1;
+        Remove(mapTareas,nombTarea);
+        eraseMap(hashTareas,nombTarea);
+        printf("Tarea marcado como completada y eliminada\n");
+      }
+      else{
+        printf("La tarea no ha sido eliminada\n");
+      }
+    }
+    else{
+      Remove(mapTareas,nombTarea);
+      eraseMap(hashTareas,nombTarea);
+      printf("La tarea ha sido eliminada\n");
+    }
+  }
+  else{
+    printf("--- NO se encontro la tarea --- \n");
+    return;
+    
+  }
+  //Esta pregunta deberia ir despues de encontrar la tarea en el Map//
+  //Luego recien haces todo el proceso de eliminacion, te recomiendo que primero 
+  //comienzes pro el map y luego la hash
+  //Primero busca en la hash, en el map la clave se guarda con truco
+  //y para obtener esa clave trucada primero debes buscarla en el hash
+  //Pair* parTarea = Search(mapTareas, nombTarea);
+  // no la encuentra por que la clave esta trucada
+        
+}
+
+//opcion 5
+
+void deshacerAccion(Map* mapTareas, HashMap* hashTareas){
+  
+}
+
+//opcion 6
+
+void importarDatos(Map* mapTareas, HashMap* hashTareas){
+
+  FILE* archivo;
+  char getLine[1024];
+  char nombreArchivo[50];
+
+  printf("Ingrese el nombre del archivo a importar: ");
+  scanf("%s", nombreArchivo);
+  archivo = fopen(nombreArchivo, "r");
+
+  if(archivo == NULL){
+    printf("Error al abrir el archivo. \n");
+    return;
+  }
+
+  fgets(getLine, 1024, archivo);
+
+  while(fgets(getLine, 1024, archivo)){
+    char* token;
+    char* cualEs;
+    int contCampos = 0;
+
+    Tarea* tareaAdd = (Tarea*) calloc(1, sizeof(Tarea));
+
+    tareaAdd->mapPrecedentes = createMap();
+
+    token = strtok(getLine, ",");
+
+    while(token != NULL){
+      cualEs = token;
+
+      switch(contCampos){
+        case 0:
+          strcpy(tareaAdd->nombre, cualEs);
+          break;
+        case 1:
+          tareaAdd->prioridad = atoi(cualEs);
+          break;
+        default:
+          break;
+      }
+      contCampos++;
+      token = strtok(NULL, ",");
+    }
+
+    //aqui aniado al coso;
+    char a = 33+tareaAdd->prioridad;
+    tareaAdd->key = getKey(tareaAdd->nombre, tareaAdd->prioridad);
+    
+    Insert(mapTareas, tareaAdd->key, tareaAdd);
+  
+    TareaE* auxTarea = obtenerTareaAux(tareaAdd->nombre, tareaAdd->prioridad);
+    insertMap(hashTareas, auxTarea->nombre, auxTarea);
+  }
+  
+
+  //aqui mando la lista de coso a -> b
+  //aun en construcciones
+  
+  printf("Archivo importado correctamente\n");
+  fclose(archivo);
 }
   
 int main(void) {
-  int opcion = 7;
+  int opcion = 8;
 
   Map* mapTareas = createMap();
   HashMap* hashTareas = createHash(10000); // <- usa Par
@@ -218,6 +345,17 @@ int main(void) {
         break;
       case 3:
         mostrarTareas(mapTareas, hashTareas);
+        break;
+      case 4:
+        //marcarCompletada(mapTareas, hashTareas);
+        break;
+      case 5:
+        deshacerAccion(mapTareas, hashTareas);
+        break;
+      case 6:
+        importarDatos(mapTareas, hashTareas);
+      case 7:
+        printf("----Fin del Programa----\n");
         break;
       case 8:
         imprimirTareas(mapTareas);

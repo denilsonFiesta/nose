@@ -51,31 +51,24 @@ struct AVLTreeNode* createTreeNode(char* key, void* value){
 struct AVLTreeNode* SingleRotateLeft(struct AVLTreeNode* X){
   struct AVLTreeNode* W = X->left;
   X->left = W->right;
-  if (W->right != NULL) {
-    W->right->parent = X;
-  }
   W->right = X;
   W->parent = X->parent;
   X->parent = W;
-  X->height = max(Height(X->left), Height(X->right)) + 1;
-  W->height = max(Height(W->left), X->height) + 1;
+  X->height = max( Height(X->left), Height(X->right) ) + 1;
+  W->height = max( Height(W->left), X->height) +1;
   return W;
 }
 
 struct AVLTreeNode* SingleRotateRight(struct AVLTreeNode* W){
   struct AVLTreeNode* X = W->right;
-  W->right = X->left;
-  if (X->left != NULL) {
-    X->left->parent = W;
-  }
+  W->right =  X->left;
   X->left = W;
   X->parent = W->parent;
   W->parent = X;
-  W->height = max(Height(W->left), Height(W->right)) + 1;
-  X->height = max(Height(X->right), W->height) + 1;
+  W->height = max( Height(W->left), Height(W->right) ) + 1;
+  X->height = max( Height(X->right), W->height)  +1;
   return X;
 }
-
 
 struct AVLTreeNode* DoubleRotateLeft(struct AVLTreeNode *Z){
   Z->left = SingleRotateRight(Z->left);
@@ -115,7 +108,6 @@ struct AVLTreeNode* insertar(AVLTreeNode* root, AVLTreeNode* parent, char* key, 
   root->height = max( Height(root->right), Height(root->left) ) + 1;
   return root;
 }
-
 
 void Insert(Map* map, char* key, void* value){
   map->root = insertar(map->root, NULL, key, value);
