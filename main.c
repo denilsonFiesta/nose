@@ -28,6 +28,14 @@ typedef struct{
   char tareaB[50];
 }Conexion;
 
+typedef struct{
+  char *key;
+  int prioridad;
+  char nombre[50];
+  char precedente[50];
+  int tipo;
+  List* listaConexiones;
+}Accion;
 
 void mostrarMenu(){
   printf("\n      Organizacion de Tareas     \n");
@@ -37,9 +45,12 @@ void mostrarMenu(){
   printf("[4] Marcar tarea completada \n");
   printf("[5] Deshacer ultima accion \n");
   printf("[6] Importar Datos \n");
-  printf("[7] Salir \n");
+  printf("[7] Mostrar precedencia de las tareas \n");
+  printf("[8] Salir \n");
   printf("Seleccione una opción: ");
 }
+
+
 
 char* getKey(char* nombre, int prioridad){
   char a = 33+prioridad;
@@ -50,13 +61,19 @@ char* getKey(char* nombre, int prioridad){
   return key;
 }
 
-Tarea* obtenerTarea(){
+Tarea* obtenerTarea(char nombre[50], int prioridad, int wwout){
 
   Tarea* new = calloc(1, sizeof(Tarea));
-  printf("Nombre : ");
-  scanf("%s", new->nombre);
-  printf("Prioridad : ");
-  scanf("%d", &new->prioridad);  
+  if(!wwout){
+    printf("Nombre : ");
+    scanf("%s", new->nombre);
+    printf("Prioridad : ");
+    scanf("%d", &new->prioridad);  
+  }else{
+    strcpy(new->nombre, nombre);
+    new->prioridad = prioridad;
+  }
+  
   char a = 33+new->prioridad;
   new->key = getKey(new->nombre, new->prioridad);
   new->mapPrecedentes = createMap();
@@ -95,20 +112,39 @@ void resetVisited(HashMap* hashTareas){
   
 }
 
+Accion* obtenerAccion(TareaE* tareaE){
+  Accion* nuevaAccion = calloc(1,sizeof(Accion));
+  nuevaAccion->key = getKey(tareaE->nombre,tareaE->prioridad);
+  nuevaAccion->prioridad = tareaE->prioridad;
+  strcpy(nuevaAccion->nombre,tareaE->nombre);
+  return nuevaAccion;
+}
+
+
+
 //opcion 1
 
-void agregarTarea (Map* mapTareas, HashMap* hashTareas){
-  Tarea* nuevaTarea = obtenerTarea();
+void agregarTarea (Map* mapTareas, HashMap* hashTareas, List* listaAcciones, char nombre[50], int prioridad, int wwout){
+  
+  Tarea* nuevaTarea = obtenerTarea(nombre, prioridad, wwout);
   Insert(mapTareas, nuevaTarea->key, nuevaTarea);
   
   TareaE* auxTarea = obtenerTareaAux(nuevaTarea->nombre, nuevaTarea->prioridad);
   insertMap(hashTareas, auxTarea->nombre, auxTarea);
-  printf("\nTarea ingresada correctamente\n");
+
+  
+  
+  if(!wwout){
+    Accion* nuevaAccion = obtenerAccion(auxTarea);
+    nuevaAccion->tipo = 1;
+    pushBack(listaAcciones, nuevaAccion);
+    printf("\n---Tarea ingresada correctamente----\n");
+  }
 }
 
 //opcion 2
 
-void establecerPrecedencia(Map* mapTareas, HashMap* hashTareas, char tareaA[50], char* tareaB[50], int wwout){
+void establecerPrecedencia(Map* mapTareas, HashMap* hashTareas, List* listaAcciones, char tareaA[50], char* tareaB[50], int wwout){
   
   char key1[50], key2[50];
   if(!wwout){
@@ -146,12 +182,18 @@ void establecerPrecedencia(Map* mapTareas, HashMap* hashTareas, char tareaA[50],
   Map* mapita =  tarea2->mapPrecedentes;
   TareaE* precedencia = obtenerTareaAux(tar1->nombre, tar1->prioridad);
   Insert(mapita, precedencia->key, precedencia);
-  
-  if(!wwout) printf("\nPrecedencia ingresada correctamente\n");
+
+  if(!wwout){
+    Accion* action = obtenerAccion(tar2);
+    strcpy(action->precedente, key1);
+    action->tipo = 2;
+    pushBack(listaAcciones,action);
+    printf("\nPrecedencia ingresada correctamente\n");
+  }
+
 }
 
 //opcion 3
-
 
 void topologicalSort(Tarea* v,  Map* mapTareas, HashMap* hashTareas){
   
@@ -167,14 +209,15 @@ void topologicalSort(Tarea* v,  Map* mapTareas, HashMap* hashTareas){
     u = rNext(v->mapPrecedentes);
   }
 
-  printf("%s \n" , v->nombre);
+  printf("%s - %d \n" , v->nombre, v->prioridad);
   
 }
 
 void mostrarTareas(Map* mapTareas, HashMap* hashTareas){
-
-  //Marcar unvisited al hash de tareas
   resetVisited(hashTareas);
+
+  printf(" --- Orden de las tareas --- \n");
+  printf(" NOMBRE - PRIORIDAD \n");
   
   Pair* it = rFirst(mapTareas);
   while(it!=NULL){
@@ -187,35 +230,29 @@ void mostrarTareas(Map* mapTareas, HashMap* hashTareas){
   
 }
 
-void imprimirTareas(Map* mapTareas){
-  Pair* it = rFirst(mapTareas);
-  int cont = 0 ;
-  
-  while(it!=NULL){
-    Tarea* tarea = getTarea(it);
+//Auxilar para agregar conexiones
 
-    printf("%s - %d\n", tarea->nombre, tarea->prioridad);
-    
-    Pair* it2 = rFirst(tarea->mapPrecedentes);
-    while(it2 != NULL){
-      TareaE* tareaP = getTareaEP(it2);
-      printf("  %s\n",tareaP->nombre);
-      it2 = rNext(tarea->mapPrecedentes);
-    }
-    cont++;
-    it = rNext(mapTareas);
+agregarConexiones(Map* mapTareas, HashMap* hashTareas, List* listaConexiones){
+
+  Conexion* it = firstList(listaConexiones);
+  
+  while(it != NULL){
+    establecerPrecedencia(mapTareas, hashTareas,NULL,it->tareaA, it->tareaB, 1);
+    it = nextList(listaConexiones);
   }
-  printf("Se encontraron %d tarea[s]. \n", cont);
 }
 
 //opcion 4
 
-void marcarCompletada(Map* mapTareas, HashMap* hashTareas){
+void marcarCompletada(Map* mapTareas, HashMap* hashTareas, List* listaAcciones, char tareaAux[50], int wwout){
   char nombTarea[50];
   char resp;
+
+  if(!wwout){
+    printf("¿Que tarea sera completada? : ");
+    scanf("%s", nombTarea);
+  }else strcpy(nombTarea, tareaAux);
   
-  printf("Que tarea sera completada: ");
-  scanf("%s", nombTarea);
   Par* parTarea = searchMap(hashTareas, nombTarea);
 
   if(parTarea == NULL){
@@ -223,26 +260,58 @@ void marcarCompletada(Map* mapTareas, HashMap* hashTareas){
     return;
   }
   
-
   Pair* tareita = Search(mapTareas, getTareaE(parTarea)->key );
   Tarea* tarea = getTarea(tareita);
 
-  if(First(tarea->mapPrecedentes) != NULL){
-    printf("Está seguro que desea eliminar la tarea? s/n: ");
-    scanf("%s", &resp);
-    if(resp != 's'){
-      printf(" --- No se realizo ninguna accion ---");
-      return;
+  if(!wwout){
+    if(First(tarea->mapPrecedentes) != NULL){
+      printf("¿Está seguro que desea eliminar la tarea? s/n: ");
+      scanf("%s", &resp);
+      if(resp != 's'){
+        printf(" --- NO se realizo ninguna accion ---");
+        return;
+      }
+    }
+  }
+  TareaE* tareaa = getTareaE(parTarea);
+  Accion* action;
+  if(!wwout){
+    action = obtenerAccion(tareaa);
+    action->listaConexiones = createList();
+    action->tipo = 3;
+  }
+  
+  Conexion* cn;
+
+  if(!wwout){
+    Pair* it2 = First(tarea->mapPrecedentes);
+    while(it2 != NULL){
+
+      cn = (Conexion*) calloc(1, sizeof(Conexion));
+      strcpy(cn->tareaB, tarea->nombre);
+      strcpy(cn->tareaA, getTareaEP(it2)->nombre );
+      cn->tareaA[strcspn(cn->tareaA, "\n")] ='\0';
+      pushBack(action->listaConexiones, cn);
+      
+      it2 =  Next(tarea->mapPrecedentes);
     }
   }
 
   Pair* it = First(mapTareas);
-
+  
   while(it != NULL){
 
     Tarea* check = getTarea(it);
     Pair* buscado = Search(check->mapPrecedentes, tarea->key);
     if(buscado != NULL){
+      if(!wwout){
+        cn = (Conexion*) calloc(1, sizeof(Conexion));
+        strcpy(cn->tareaB, check->nombre);
+        strcpy(cn->tareaA, tarea->nombre);
+        cn->tareaA[strcspn(cn->tareaA, "\n")] ='\0';
+        pushBack(action->listaConexiones, cn);
+      }
+      
       Remove(check->mapPrecedentes,tarea->key);
     }
     it =  Next(mapTareas);
@@ -250,17 +319,46 @@ void marcarCompletada(Map* mapTareas, HashMap* hashTareas){
 
   Remove(mapTareas, getTareaE(parTarea)->key);
   eraseMap(hashTareas, nombTarea);
-  printf("--- Tarea fue marcada como completada ---\n");    
+  if(!wwout){
+    pushBack(listaAcciones,action);
+    printf("--- Tarea fue marcada como completada ---\n");    
+  }
 }
 
 //opcion 5
 
-void deshacerAccion(Map* mapTareas, HashMap* hashTareas){
-  Pair* primerTarea = First(mapTareas);
-  if (primerTarea == NULL){
-    printf("No hay acciones que deshacer\n");
+void deshacerAccion(Map* mapTareas, HashMap* hashTareas, List* listaAcciones){
+
+  Accion* action = lastList(listaAcciones);
+  Tarea* tareita;
+  Par* aux;
+
+  if(action == NULL){
+    printf("--- NO hay acciones para deshacer ---\n");
     return;
   }
+
+  switch(action->tipo){
+    case 1:
+      marcarCompletada(mapTareas, hashTareas, NULL, action->nombre, 1);
+      break;
+    case 2:
+      tareita = getTarea(Search(mapTareas, action->key));
+      aux = searchMap(hashTareas, action->precedente);
+      Remove(tareita->mapPrecedentes, getTareaE(aux)->key );
+      break;
+    case 3:
+      agregarTarea(mapTareas, hashTareas, listaAcciones, action->nombre, action->prioridad, 1);
+      agregarConexiones(mapTareas, hashTareas, action->listaConexiones);
+      break;
+    default:
+      printf("--- Acción inválida ---\n");
+      return;
+  }
+  
+  popBack(listaAcciones);
+  printf("--- Accion deshecha correctamente ---\n");
+  
 }
 
 //opcion 6
@@ -327,29 +425,42 @@ void importarDatos(Map* mapTareas, HashMap* hashTareas){
     insertMap(hashTareas, auxTarea->nombre, auxTarea);
   }
 
-  //aqui mando la lista de coso a -> b
+  agregarConexiones(mapTareas, hashTareas, listaConexiones);
   
-  Conexion* it = firstList(listaConexiones);
-  
-  while(it != NULL){
-    //printf("%s - %s \n", it->tareaA, it->tareaB);
-    establecerPrecedencia(mapTareas, hashTareas, it->tareaA, it->tareaB, 1);
-    it = nextList(listaConexiones);
-  }
-
-
-  
-  //aun en construcciones
-  
-  printf("Archivo importado correctamente\n");
+  printf("--- Archivo importado correctamente ---\n");
   fclose(archivo);
 }
-  
+
+
+//En caso de querer imprimir las tareas opcion 8 "Extra"
+void imprimirTareas(Map* mapTareas){
+  Pair* it = rFirst(mapTareas);
+  int cont = 0 ;
+  printf(" NOMBRE - PRIORIDAD \n");
+  while(it!=NULL){
+    Tarea* tarea = getTarea(it);
+
+    printf("\n[%d] %s - %d\n",cont+1,  tarea->nombre, tarea->prioridad);
+    
+    Pair* it2 = rFirst(tarea->mapPrecedentes);
+    printf("precedentes:  \n");
+    while(it2 != NULL){
+      TareaE* tareaP = getTareaEP(it2);
+      printf("-->  %s\n",tareaP->nombre);
+      it2 = rNext(tarea->mapPrecedentes);
+    }
+    cont++;
+    it = rNext(mapTareas);
+  }
+  printf("\n--- Se encontraron %d tarea[s]. ---\n", cont);
+}
+
 int main(void) {
   int opcion = 8;
 
   Map* mapTareas = createMap();
   HashMap* hashTareas = createHash(10000); // <- usa Par
+  List *listaAcciones = createList();
   
   while (true){
     mostrarMenu();
@@ -359,33 +470,33 @@ int main(void) {
 
     switch(opcion){
       case 1:
-        agregarTarea(mapTareas, hashTareas);
+        agregarTarea(mapTareas, hashTareas, listaAcciones, "", 0, 0);
         break;
       case 2:
-        establecerPrecedencia(mapTareas, hashTareas, "", "", 0);
+        establecerPrecedencia(mapTareas, hashTareas,listaAcciones,"", "", 0);
         break;
       case 3:
         mostrarTareas(mapTareas, hashTareas);
         break;
       case 4:
-        marcarCompletada(mapTareas, hashTareas);
+        marcarCompletada(mapTareas, hashTareas, listaAcciones, "", 0);
         break;
       case 5:
-        //deshacerAccion(mapTareas, hashTareas);
+        deshacerAccion(mapTareas, hashTareas, listaAcciones);
         break;
       case 6:
         importarDatos(mapTareas, hashTareas);
         break;
       case 7:
-        printf("----Fin del Programa----\n");
+        imprimirTareas(mapTareas);
         break;
       case 8:
-        imprimirTareas(mapTareas);
+        printf("----Fin del Programa----\n");
         break;
       default:
         printf("Opcion Invalida, ingrese nueva opcion\n");
     }
-    if(opcion == 7)
+    if(opcion == 8)
       break;
   }
   return 0;

@@ -28,6 +28,14 @@ typedef struct{
   char tareaB[50];
 }Conexion;
 
+typedef struct{
+  char *key;
+  int prioridad;
+  char nombre[50];
+  int tipo;
+  List* listaPrecedentes;
+  List* PrecedentesEnLista;
+}Accion;
 
 void mostrarMenu(){
   printf("\n      Organizacion de Tareas     \n");
@@ -95,14 +103,20 @@ void resetVisited(HashMap* hashTareas){
   
 }
 
+Accion* obtenerAccion(TareaE* )
+
 //opcion 1
 
-void agregarTarea (Map* mapTareas, HashMap* hashTareas){
+void agregarTarea (Map* mapTareas, HashMap* hashTareas, List* listaAcciones){
   Tarea* nuevaTarea = obtenerTarea();
   Insert(mapTareas, nuevaTarea->key, nuevaTarea);
   
   TareaE* auxTarea = obtenerTareaAux(nuevaTarea->nombre, nuevaTarea->prioridad);
   insertMap(hashTareas, auxTarea->nombre, auxTarea);
+
+  Accion* nuevaAccion = obtenerAccion(auxTarea);
+  pushBack(listaAccioens);
+  
   printf("\nTarea ingresada correctamente\n");
 }
 
@@ -261,6 +275,7 @@ void deshacerAccion(Map* mapTareas, HashMap* hashTareas){
     printf("No hay acciones que deshacer\n");
     return;
   }
+  
 }
 
 //opcion 6
@@ -350,6 +365,7 @@ int main(void) {
 
   Map* mapTareas = createMap();
   HashMap* hashTareas = createHash(10000); // <- usa Par
+  List *listaAcciones = createList();
   
   while (true){
     mostrarMenu();
@@ -359,7 +375,7 @@ int main(void) {
 
     switch(opcion){
       case 1:
-        agregarTarea(mapTareas, hashTareas);
+        agregarTarea(mapTareas, hashTareas, listaAcciones);
         break;
       case 2:
         establecerPrecedencia(mapTareas, hashTareas, "", "", 0);
